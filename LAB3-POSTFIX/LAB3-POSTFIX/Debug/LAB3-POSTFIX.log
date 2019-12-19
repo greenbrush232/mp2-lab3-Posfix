@@ -1,3 +1,3 @@
 ﻿  lexeme.cpp
-c:\users\osipov.n\desktop\mp2-lab3-posfix\lab3-postfix\lab3-postfix\lexeme.cpp(35): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\osipov.n\desktop\mp2-lab3-posfix\lab3-postfix\lab3-postfix\lexeme.cpp(104): warning C4018: <: несоответствие типов со знаком и без знака
   LAB3-POSTFIX.vcxproj -> C:\Users\osipov.n\Desktop\mp2-lab3-Posfix\LAB3-POSTFIX\Debug\LAB3-POSTFIX.exe
