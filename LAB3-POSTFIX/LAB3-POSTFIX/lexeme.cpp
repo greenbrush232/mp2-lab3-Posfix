@@ -6,15 +6,15 @@
 using namespace std;
 enum lexeme_type 
 {
-	number,
-	plus,
-	minus,
-	un_minus,
-	mult,
-	divide,
-	power,
-	left_br,
-	right_br
+	number,            // 0
+	plus,              // 1
+	minus,             // 2
+	un_minus,          // 3
+	mult,              // 4
+	divide,            // 5
+	power,             // 6
+	left_br,           // 7
+	right_br           // 8
 };
 
 enum status
@@ -28,8 +28,8 @@ struct lexeme
 {
 	lexeme_type type;
 	double val;
-	int pr;
-	string s;
+	int pr = -1;
+	int s = -1;
 	lexeme() {};
 	lexeme(double res)
 	{
@@ -37,30 +37,29 @@ struct lexeme
 		val = res;
 		pr = -1;
 	}
-	lexeme(lexeme_type type, double val):type(type), val(val){}                         // числа
+	lexeme(lexeme_type type, double val):type(type), val(val), pr(-1){}                         // числа
 	lexeme(lexeme_type _type, int _pr)
 	{
 		type = _type;
 		val = -1.0;
 		if (type == number) { val = _pr; pr = -1; }
-		else if (type == lexeme_type::plus) { pr = 1; }
-		else if (type == lexeme_type::minus) { pr = 1; }
-		else if (type == lexeme_type::mult) { pr = 2; }
-		else if (type == lexeme_type::divide) { pr = 2; }
-		else if (type == lexeme_type::power) { pr = 3; }
-		else if (type == lexeme_type::un_minus) { pr = 1; }
-		else if (type == lexeme_type::left_br) { pr = 4; }
-		else if (type == lexeme_type::right_br) { pr = 4; }
+		else if (type == lexeme_type::plus) { pr = 2; }
+		else if (type == lexeme_type::minus) { pr = 2; }
+		else if (type == lexeme_type::mult) { pr = 3; }
+		else if (type == lexeme_type::divide) { pr = 3; }
+		else if (type == lexeme_type::power) { pr = 4; }
+		else if (type == lexeme_type::left_br) { pr = -2; }
+		else if (type == lexeme_type::right_br) { pr = -3; }
 		
 	}            
-	lexeme(lexeme_type type, string s, double val):type(type),val(val),s(s) {}
+	lexeme(lexeme_type type, int s, double val):type(type),val(val),s(s) {}
  
 
 };
 
 lexeme getNextLexeme(string s, int pos, int &nexPos)
 {
-	
+	int j = -1;
 	char tmp = s[pos];
 	double d = 0;
 	lexeme l;
@@ -72,20 +71,16 @@ lexeme getNextLexeme(string s, int pos, int &nexPos)
 			|| s[pos + 1] == '5' || s[pos + 1] == '6' || s[pos + 1] == '7' || s[pos + 1] == '8' || s[pos + 1] == '9'))
 		{
 			int i = pos;
-			int c = c=0;
 			d = (double)(s[pos]-'0');
+
 			while ((   (i + 1) != s.size() )&& (s[i + 1] == '0' || s[i + 1] == '1' || s[i + 1] == '2' || s[i + 1] == '3' || s[i + 1] == '4'
 				|| s[i + 1] == '5' || s[i + 1] == '6' || s[i + 1] == '7' || s[i + 1] == '8' || s[i + 1] == '9'))
 			{
-				d = d * 10 + (double)(s[i + 1]-'0');
-				
-				i++;
-			}
-			s = s.erase(pos, i+1);
-			l = lexeme(number, d);
-
-		}
-		                                                                         
+				d = d * 10 + (double)(s[i + 1]-'0');	
+				i++;                                 
+			}		
+			 j = i - pos + 1;			
+		}		                                                                         
 	}
 	else if (tmp == '+')
 	{
@@ -121,7 +116,7 @@ lexeme getNextLexeme(string s, int pos, int &nexPos)
 	{
 		
 		lexeme o;
-		o = lexeme(number, s, d);
+		o = lexeme(number, j, d);
 		
 		return o;
 	}
@@ -137,23 +132,27 @@ vector<lexeme> Parse(string s)
 	int pos = 0;
 	while (pos != s.size())
 	{
-		tmp = getNextLexeme(s, pos, pos);
 		
+		
+		
+		tmp = getNextLexeme(s, pos, pos);
+		           
 		if (st == start)
 		{
+			
 			if (tmp.type == number)
 			{
-				if (tmp.s == "")
+				if (tmp.s == -1)
 				{
 					res.push_back(tmp);
 			        st = waitOperator;
 				}
 				else
 				{
-					s = tmp.s;
+					pos = pos + tmp.s - 1;
 					res.push_back(tmp);
 					st = waitOperator;
-					pos--;
+					
 				}
 				
 				
@@ -161,26 +160,26 @@ vector<lexeme> Parse(string s)
 			else if (tmp.type == left_br)
 			{
 				res.push_back(tmp);
-				st = waitNumber;
+				st = waitNumber;                                  
 				
 			}
 			else if (tmp.type == lexeme_type::minus)
 			{
 				
-				s.erase(0, 1);
+				pos++;
 				tmp = getNextLexeme(s, pos, pos);
 				tmp.val = tmp.val - (2 * tmp.val);
-				if (tmp.s == "")
+				if (tmp.s == -1)
 				{
 					res.push_back(tmp);
 					st = waitOperator;
 				}
 				else
 				{
-					s = tmp.s;
+					pos = pos + tmp.s - 1;
 					res.push_back(tmp);
 					st = waitOperator;
-					pos--;
+					
 				}
 
 			}
@@ -188,6 +187,7 @@ vector<lexeme> Parse(string s)
 			{
 				throw "error";
 			}
+			
 		}
 		else if (st == waitOperator)
 		{
@@ -220,56 +220,125 @@ vector<lexeme> Parse(string s)
 				res.push_back(tmp);
 				st = waitNumber;
 			}
+			else if (tmp.type == lexeme_type::power)
+			{
+				res.push_back(tmp);
+				st = waitNumber;
+			}
 			else
 			{
 				
 				throw "error";
 				
 			}
+			
 		}
 		else if (st == waitNumber)
 		{
+			
 			if (tmp.type == number)
 			{
-				res.push_back(tmp);
-				st = waitOperator;				
+				if (tmp.s == -1)
+				{
+					res.push_back(tmp);
+					st = waitOperator;
+				}
+				else
+				{
+					pos = pos + tmp.s - 1;
+					res.push_back(tmp);
+					st = waitOperator;
+
+				}
 			}
 			else if (tmp.type == left_br)
 			{
 				res.push_back(tmp);
 				st = waitNumber;
 			}
+			else if (tmp.type == lexeme_type::minus) 
+			{
+				                  
+				pos++;
+				tmp = getNextLexeme(s, pos, pos);
+				tmp.val = tmp.val - (2 * tmp.val);
+				
+				if (tmp.s == -1)
+				{
+					res.push_back(tmp);
+					st = waitOperator;
+				}
+				else
+				{ 
+					pos = pos + tmp.s-1;                   
+					res.push_back(tmp);
+					st = waitOperator;
+					
+				}
+				
+				
+
+			}
+			
 		}
 		pos++;
 		
 	}
+	
 	return res;
 }
 
 vector<lexeme> VectorToStack(vector<lexeme> data)
 {
-	lexeme tmp;
-	vector<lexeme> res;
-	int minPr = -1;
-	int pos = 0;
-	while (pos != data.size())
+	vector<lexeme> res; 
+	stack<lexeme> ser;
+	int ii=0;
+	for (int i = 0; i < data.size(); i++)
 	{
-		tmp = data[pos];
-		if(tmp.type == number && pos==0)
+		
+		if (data[i].pr == -2) // (
 		{
-			res.push_back(tmp);
+			   ser.push(data[i]);
 		}
-		else if (tmp.type == number)
+			                                                                      
+		else if ((data[i].pr == 2) || (data[i].pr == 3) || (data[i].pr == 4))
 		{
-			res.push_back(tmp);
+			while ( (!ser.empty()) && (ser.top().pr > data[i].pr))
+			{
+				ii++;
+				res.push_back(ser.top());    
+				ser.pop();
+			}
+			ser.push(data[i]);                                                           
+			                                                                          
 		}
-		else if (tmp.pr == 1)
+		else if(data[i].pr == -3) // )
 		{
-			res.push_back(tmp);
+			while ((!ser.empty()) && (ser.top().pr != -2))
+			{
+				ii++;
+				res.push_back(ser.top());
+				ser.pop();
+			}
+			
+			ser.pop();
+			
 		}
-		cout << minPr++;
-		pos++;
+		else
+		{
+			res.push_back(data[i]);                                               
+			ii++;
+			
+		}
+		
 	}
+	while (!ser.empty())
+	{
+		ii++;
+		res.push_back(ser.top());
+		ser.pop();
+	}
+	
 	return res;
 }
 
@@ -345,17 +414,11 @@ double PolishCalculate(vector<lexeme> data)
 
 int main()
 {
-	vector<lexeme> data = {lexeme(number, 2), lexeme(number, 3), lexeme(lexeme_type::minus, -1), lexeme(number, 3), lexeme(lexeme_type::power, -1) };
-	//cout <<" Result: " << PolishCalculate(data) << "\n";
-
-	auto vectorLexeme = Parse("-523+(7)");
-	cout << "\n OTVET \n";
-	for (auto l : vectorLexeme)
-		cout << l.val << " ";
-	cout << "\n";
+	string s;
+	cin >> s;
+	vector<lexeme> vectorLexeme = Parse(s);
 	vector<lexeme> pep = VectorToStack(vectorLexeme);
-	cout << "\n";
-
+	cout<< "\n" << PolishCalculate(pep) << "\n";
 	system("pause");
 	return 0;
 }
